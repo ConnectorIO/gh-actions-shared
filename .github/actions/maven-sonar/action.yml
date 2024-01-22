@@ -1,0 +1,34 @@
+name: Maven Sonar Analysis
+description: Perform release using maven build.
+
+inputs:
+  sonar_organization:
+    description: 'Sonar cloud organization'
+    required: true
+    default: 'connectorio'
+  sonar_project_key:
+    description: 'Sonar cloud project key'
+    required: true
+  sonar_host_url:
+    description: 'Sonar cloud URL'
+    default: 'https://sonarcloud.io'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Cache SonarCloud packages'
+      uses: actions/cache@v3
+      with:
+        path: '~/.sonar/cache'
+        key: '${{ runner.os }}-sonar'
+        restore-keys: '${{ runner.os }}-sonar'
+    - name: 'Perform Sonar Analysis through maven call'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      shell: 'sh'
+      run: >-
+        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+        -Dsonar.projectKey=${{ inputs.sonar_project_key }}
+        -Dsonar.organization=${{ inputs.sonar_organization }}
+        -Dsonar.host.url=${{ inputs.sonar_host_url }}

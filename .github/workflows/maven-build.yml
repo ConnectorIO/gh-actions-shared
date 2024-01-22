@@ -1,0 +1,116 @@
+name: Maven build
+
+on:
+  workflow_call:
+    inputs:
+      openhab:
+        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
+        required: false
+        default: false
+        type: boolean
+      server_id:
+        description: 'Server id used in case if results are deployed'
+        required: false
+        default: 'sonatype-nexus'
+        type: string
+      java_version:
+        description: 'Java version used for build, used only when openhab input is not true'
+        required: false
+        default: 11
+        type: number
+      additional_profiles:
+        description: 'Profiles which should be activated during the build'
+        required: false
+        default: ''
+        type: string
+      matrix_os:
+        description: 'Platform to run on'
+        default: 'ubuntu-latest'
+        type: string
+      deploy:
+        description: 'Should maven deploy be called'
+        default: false
+        type: boolean
+    secrets:
+      CI_DEPLOY_USERNAME:
+        required: true
+        description: 'Username used for deployment'
+      CI_DEPLOY_PASSWORD:
+        required: true
+        description: 'Password used for deployment'
+
+jobs:
+  build:
+    permissions:
+      checks: write
+      contents: read
+    runs-on: ${{ inputs.matrix_os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
+        id: github-debug
+        #if: runner.debug
+      - uses: connectorio/gh-actions-shared/.github/actions/setup-java@master
+        id: setup
+        with:
+          java_version: ${{ inputs.java_version }}
+          server_id: ${{ inputs.server_id }}
+      - id: debug-secrets
+        env:
+          SECRETS_VARS: ${{ toJson(secrets) }}
+        run: echo "$SECRETS_VARS"
+
+      - uses: connectorio/gh-actions-shared/.github/actions/maven-cache@master
+        with:
+          key: ${{ hashFiles('**/pom.xml') }}
+
+      - name: 'Calculate PR version'
+        if: github.event_name == 'pull_request'
+        shell: 'bash'
+        run: |
+          baseVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout)
+          pullRequestId="pr-${{ github.event.pull_request.number }}"
+          mvn versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"}
+      - name: 'Dump build environment for debug purposes'
+        id: env-debug
+        if: runner.debug
+        shell: 'sh'
+        run: >
+          cat ~/.m2/settings.xml && env
+        env:
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      - name: 'Build with Maven'
+        shell: 'sh'
+        run: >-
+          mvn -B -fae clean verify
+          ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
+          ${{ runner.debug && '-X' || '' }}
+        env:
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      - name: 'Maven Deploy'
+        if: success()
+        shell: 'sh'
+        run: >-
+          mvn -B -nsu package deploy
+          -Dmaven.test.skip=true
+          -DretryFailedDeploymentCount=3
+          ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
+          ${{ runner.debug && '-X' || '' }}
+        env:
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      - name: 'Publish Test Report'
+        if: success() || failure()
+        uses: scacap/action-surefire-report@v1
+      - name: 'Upload Test Report'
+        uses: actions/upload-artifact@v3
+        if: success() || failure()
+        with:
+          name: 'java-test-report-${{ runner.os }}-java-${{ inputs.java_version }}'
+          path: |
+            **/surefire-reports/TEST-*.xml
+            **/failsafe-reports/TEST-*.xml

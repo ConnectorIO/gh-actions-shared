@@ -1,0 +1,141 @@
+name: Maven release
+
+on:
+  workflow_call:
+    inputs:
+      openhab:
+        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
+        required: false
+        default: false
+        type: boolean
+      release_version:
+        description: 'The version to be released from actual HEAD revision'
+        required: false
+        default: 'X.Y.Z'
+        type: string
+      development_version:
+        description: 'Version to be set as next, after release is made (appends commit to HEAD revision)'
+        required: false
+        default: 'X.Y.Z-SNAPSHOT'
+        type: string
+      perform_version:
+        description: 'Tag which should be used to perform release and publish its artifacts'
+        required: false
+        type: string
+      dry_run:
+        description: 'Should execution abstain from mutating repository/remote state?'
+        required: true
+        default: 'true'
+        type: boolean
+
+      server_id:
+        description: 'Server id used in case if results are deployed'
+        required: false
+        default: 'sonatype-nexus-staging'
+        type: string
+      java_version:
+        description: 'Java version used for build, used only when openhab input is not true'
+        required: false
+        default: 11
+        type: number
+
+    secrets:
+      GPG_PASSPHRASE:
+        required: true
+        description: 'GPG key passphrase used to access private key'
+      GPG_PRIVATE_KEY:
+        required: true
+        description: 'GPG key used to sign release artifacts'
+      CI_RELEASE_USERNAME:
+        required: true
+        description: 'Username used for deployment'
+      CI_RELEASE_PASSWORD:
+        required: true
+        description: 'Password used for deployment'
+
+jobs:
+  build:
+    permissions:
+      checks: write
+      contents: read
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest' ]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/github-bot
+        id: github-bot
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/setup-java
+        id: setup
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'temurin'
+          server_id: ${{ inputs.server_id }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      - id: debug
+        if: runner.debug
+        run: >
+          cat ~/.m2/settings.xml
+          env
+
+      - uses: ./.github/actions/maven-cache
+        id: maven-cache
+        with:
+          key: ${{ hashFiles('**/pom.xml') }}
+
+      - uses: connectorio/gh-actions-shared/.github/actions/setup-java@master
+        id: setup
+        with:
+          java_version: ${{ inputs.java_version }}
+          server_id: ${{ inputs.server_id }}
+      - id: debug-secrets
+        env:
+          SECRETS_VARS: ${{ toJson(secrets) }}
+        run: echo "$SECRETS_VARS"
+
+      - uses: connectorio/gh-actions-shared/.github/actions/maven-cache@master
+        with:
+          key: ${{ hashFiles('**/pom.xml') }}
+
+      - name: 'Maven Prepare Release'
+        id: maven-prepare-release
+        if: github.event.inputs.perform_version == '' && github.event.inputs.release_version != '' && github.event.inputs.development_version != ''
+        shell: 'sh'
+        run: >-
+          mvn -B
+          release:prepare -DpreparationProfiles=${{ format('-P {0}',  ) }}
+          -DreleaseVersion=${{ inputs.release_version }}
+          -DdevelopmentVersion=${{ inputs.development_version }}
+          -DdryRun=${{ inputs.dry_run }}
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
+
+      - name: 'Maven Perform release'
+        id: maven-perform-release
+        if: github.event.inputs.perform_version != ''
+        shell: 'sh'
+        # See https://issues.apache.org/jira/browse/SCM-729 for why the release.properties file is required.
+        # This section is borrowed from https://github.com/killbill/killbill/commit/1f376b2bae5f8d05fe916f73c5d7a207d2a083b2
+        run: |
+          echo "scm.url=scm\:git\:git@github.com\:${GITHUB_REPOSITORY}.git" > release.properties
+          echo "scm.tag=${{ github.event.inputs.perform_version }}" >> release.properties
+          mvn release:perform -DreleaseProfiles=release -DdryRun=${{ inputs.dry_run }}
+      - name: Rollback on failure
+        id: maven-rollback-release
+        if: failure()
+        shell: 'sh'
+        run: |
+          mvn -B release:rollback
+          echo "You may need to manually delete the git tag, if it was created."
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}

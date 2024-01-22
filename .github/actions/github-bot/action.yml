@@ -1,0 +1,29 @@
+name: Setup bot account
+description: Setup bot account for write access to github repository.
+
+inputs:
+  bot_name:
+    description: 'Bot account name'
+    default: 'ci@connectorio.com'
+    required: true
+  bot_email:
+    description: 'Bot account email'
+    default: 'ConnectorIO Bot'
+    required: true
+  # secrets
+  GITHUB_TOKEN:
+    description: 'API token used to access github APIs or repositories'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup git account
+      shell: 'sh'
+      run: |
+        git config user.email "${{ inputs.bot_email }}"
+        git config user.name "${{ inputs.bot_name }}"
+        git config --global url."https://${BUILD_USER}:${BUILD_TOKEN}@github.com/".insteadOf "git@github.com:"
+      env:
+        BUILD_USER: x-access-token
+        BUILD_TOKEN: ${{ inputs.GITHUB_TOKEN }}

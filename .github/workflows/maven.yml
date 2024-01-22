@@ -1,0 +1,104 @@
+name: Maven
+
+on:
+  workflow_call:
+    inputs:
+      openhab:
+        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
+        required: false
+        default: false
+        type: boolean
+      server_id:
+        description: 'Server id used in case if results are deployed'
+        required: false
+        default: 'sonatype-nexus'
+        type: string
+      java_version:
+        description: 'Java version used for build, used only when openhab input is not true'
+        required: false
+        default: 11
+        type: number
+      additional_profiles:
+        description: 'Profiles which should be activated during the build'
+        required: false
+        default: ''
+        type: string
+      deploy:
+        description: 'Should maven deploy be called'
+        default: false
+        type: boolean
+    secrets:
+      CI_DEPLOY_USERNAME:
+        required: true
+        description: 'Username used for deployment'
+      CI_DEPLOY_PASSWORD:
+        required: true
+        description: 'Password used for deployment'
+
+jobs:
+  build:
+    if: ${{ !inputs.openhab && github.ref_type == 'branch' && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    permissions:
+      checks: write
+      contents: read
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest' ]
+      fail-fast: false
+    uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
+    secrets:
+      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+    with:
+      matrix_os: ${{ matrix.os }}
+      openhab: ${{ inputs.openhab }}
+      server_id: ${{ inputs.server_id }}
+      java_version: ${{ inputs.java_version }}
+      additional_profiles: ${{ inputs.additional_profiles }}
+      deploy: ${{ inputs.deploy }}
+
+  build_oh3:
+    # github.base_ref points to target branch of pull request, head_ref is branch from which PR is made
+    # github.ref_name is set when git push is made
+    if: ${{ inputs.openhab && github.ref_type == 'branch' && (startsWith(github.ref_name, '3.') || startsWith(github.base_ref, '3.')) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    permissions:
+      checks: write
+      contents: read
+    strategy:
+      matrix:
+        java: ['11']
+        os: [ 'ubuntu-latest' ]
+      fail-fast: false
+    uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
+    secrets:
+      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+    with:
+      matrix_os: ${{ matrix.os }}
+      openhab: ${{ inputs.openhab }}
+      server_id: ${{ inputs.server_id }}
+      java_version: ${{ matrix.java }}
+      additional_profiles: ${{ inputs.additional_profiles }}
+      deploy: true
+
+  build_oh4:
+    if: ${{ inputs.openhab && github.ref_type == 'branch' && (startsWith(github.ref_name, '4.') || startsWith(github.base_ref, '4.')) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    permissions:
+      checks: write
+      contents: read
+    strategy:
+      matrix:
+        java: [ '17' ]
+        os: [ 'ubuntu-latest' ]
+      fail-fast: false
+    uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
+    secrets:
+      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+    with:
+      matrix_os: ${{ matrix.os }}
+      openhab: ${{ inputs.openhab }}
+      server_id: ${{ inputs.server_id }}
+      java_version: ${{ matrix.java }}
+      additional_profiles: ${{ inputs.additional_profiles }}
+      deploy: true

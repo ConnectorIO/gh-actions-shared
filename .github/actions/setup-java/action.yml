@@ -1,0 +1,64 @@
+name: Setup java
+description: Setup java according to passed settings matrix.
+
+inputs:
+  java_version:
+    description: 'Java version'
+    required: true
+  distribution:
+    description: 'Java distribution'
+    default: 'temurin'
+    required: true
+  deploy:
+    description: 'should results be deployed'
+    required: false
+    default: 'false'
+  server_id:
+    description: 'Maven deploy server (taken from pom.xml distribution section)'
+    default: 'sonatype-nexus-snapshots'
+
+  # secrets
+  SERVER_USERNAME:
+    description: 'Maven deploy username'
+    default: CI_DEPLOY_USERNAME
+    required: false
+  SERVER_PASSWORD:
+    description: 'Maven deploy password'
+    default: CI_DEPLOY_PASSWORD
+    required: false
+  GPG_PRIVATE_KEY:
+    description: 'GPG key to sign artifacts'
+    required: false
+
+outputs:
+  ENV_SERVER_USERNAME:
+    value: ${{ steps.generate-outputs.outputs.SERVER_USERNAME }}
+    description: 'CI username setup by this action'
+  ENV_SERVER_PASSWORD:
+    value: ${{ steps.generate-outputs.outputs.SERVER_PASSWORD }}
+    description: 'CI password setup by this action'
+  ENV_GPG_PASSPHRASE:
+    value: ${{ steps.generate-outputs.outputs.GPG_PASSPHRASE }}
+    description: 'GPG_PASSPHRASE environment variable set up by this action'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Set up Java ${{ inputs.java_version }}@${{ inputs.distribution }}'
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ inputs.java_version }}
+        distribution: ${{ inputs.distribution }}
+        server-id: ${{ inputs.server_id }}
+        server-username: ${{ inputs.SERVER_USERNAME }}
+        server-password: ${{ inputs.SERVER_PASSWORD }}
+        gpg-passphrase: GPG_PASSPHRASE
+        gpg-private-key: ${{ inputs.GPG_PRIVATE_KEY }}
+    - name: 'Produce action outputs'
+      id: generate-outputs
+      shell: 'sh'
+      run: |
+        echo "SERVER_USERNAME=${{ inputs.SERVER_USERNAME }}" >> $GITHUB_OUTPUT
+        echo "SERVER_PASSWORD=${{ inputs.SERVER_PASSWORD }}" >> $GITHUB_OUTPUT
+        echo "GPG_PASSPHRASE=GPG_PASSPHRASE" >> $GITHUB_OUTPUT
+        cat $GITHUB_OUTPUT

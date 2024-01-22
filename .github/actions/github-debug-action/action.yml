@@ -1,0 +1,49 @@
+name: GitHub debug action
+description: Dump state of github workflow execution.
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Dump GitHub context'
+      shell: 'sh'
+      run: |
+        echo "$GITHUB_CONTEXT"
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+    - name: 'Dump job context'
+      shell: 'sh'
+      run: |
+        echo "$JOB_CONTEXT"
+      env:
+        JOB_CONTEXT: ${{ toJson(job) }}
+    - name: 'Dump steps context'
+      shell: 'sh'
+      run: |
+        echo "$STEPS_CONTEXT"
+      env:
+        STEPS_CONTEXT: ${{ toJson(steps) }}
+    - name: 'Dump runner context'
+      shell: 'sh'
+      run: |
+        echo "$RUNNER_CONTEXT"
+      env:
+        RUNNER_CONTEXT: ${{ toJson(runner) }}
+    - name: 'Dump strategy context'
+      shell: 'sh'
+      run: |
+        echo "$STRATEGY_CONTEXT"
+      env:
+        STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+    - name: 'Dump matrix context'
+      shell: 'sh'
+      run: |
+        echo "$MATRIX_CONTEXT"
+      env:
+        MATRIX_CONTEXT: ${{ toJson(matrix) }}
+    - name: 'Dump input context'
+      shell: 'sh'
+      run: |
+        echo "$INPUT_CONTEXT"
+      env:
+        INPUT_CONTEXT: ${{ toJson(inputs) }}
+
