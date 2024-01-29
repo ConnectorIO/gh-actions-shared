@@ -31,6 +31,18 @@ on:
         description: 'Skip publishing of test report'
         default: false
         type: boolean
+
+      # sonar settings
+      sonar_organization:
+        description: 'Sonar cloud organization'
+        type: string
+      sonar_project_key:
+        description: 'Sonar cloud project key'
+        type: string
+      sonar_host_url:
+        description: 'Sonar cloud URL'
+        default: 'https://sonarcloud.io'
+        type: string
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
