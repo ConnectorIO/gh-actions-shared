@@ -83,7 +83,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        java: ['11']
+        java: [ '11' ]
         os: [ 'ubuntu-latest' ]
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
