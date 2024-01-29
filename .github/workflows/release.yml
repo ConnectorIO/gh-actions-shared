@@ -50,8 +50,7 @@ on:
 
 jobs:
   release:
-    if: !inputs.openhab
-    runs-on: ubuntu-latest
+    if: ${{ !inputs.openhab }}
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
@@ -72,7 +71,6 @@ jobs:
   release_oh3:
     # github.ref is set with workflow dispatch event
     if: ${{ inputs.openhab && startsWith(github.ref, '3.') }}
-    runs-on: ubuntu-latest
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
@@ -92,7 +90,6 @@ jobs:
 
   release_oh4:
     if: ${{ inputs.openhab && startsWith(github.ref, '4.') }}
-    runs-on: ubuntu-latest
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'

@@ -77,11 +77,9 @@ jobs:
         env:
           SECRETS_VARS: ${{ toJson(secrets) }}
         run: echo "$SECRETS_VARS"
-
       - uses: connectorio/gh-actions-shared/.github/actions/maven-cache@master
         with:
           key: ${{ hashFiles('**/pom.xml') }}
-
       - name: 'Calculate PR version'
         if: github.event_name == 'pull_request'
         shell: 'bash'

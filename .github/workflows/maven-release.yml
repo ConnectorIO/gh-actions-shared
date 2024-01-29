@@ -38,6 +38,11 @@ on:
         required: false
         default: 11
         type: number
+      additional_profiles:
+        description: 'Profiles which should be activated during the build'
+        required: false
+        default: ''
+        type: string
 
     secrets:
       GPG_PASSPHRASE:
@@ -58,13 +63,11 @@ jobs:
     permissions:
       checks: write
       contents: read
-    strategy:
-      matrix:
-        os: [ 'ubuntu-latest' ]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
+      - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
+        id: github-debug
       - uses: ./.github/actions/github-bot
         id: github-bot
         with:
@@ -76,17 +79,6 @@ jobs:
           distribution: 'temurin'
           server_id: ${{ inputs.server_id }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      - id: debug
-        if: runner.debug
-        run: >
-          cat ~/.m2/settings.xml
-          env
-
-      - uses: ./.github/actions/maven-cache
-        id: maven-cache
-        with:
-          key: ${{ hashFiles('**/pom.xml') }}
-
       - uses: connectorio/gh-actions-shared/.github/actions/setup-java@master
         id: setup
         with:
@@ -96,29 +88,26 @@ jobs:
         env:
           SECRETS_VARS: ${{ toJson(secrets) }}
         run: echo "$SECRETS_VARS"
-
       - uses: connectorio/gh-actions-shared/.github/actions/maven-cache@master
         with:
           key: ${{ hashFiles('**/pom.xml') }}
-
       - name: 'Maven Prepare Release'
         id: maven-prepare-release
         if: github.event.inputs.perform_version == '' && github.event.inputs.release_version != '' && github.event.inputs.development_version != ''
         shell: 'sh'
         run: >-
           mvn -B
-          release:prepare -DpreparationProfiles=${{ format('-P {0}',  ) }}
+          release:prepare
+          ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
           -DreleaseVersion=${{ inputs.release_version }}
           -DdevelopmentVersion=${{ inputs.development_version }}
           -DdryRun=${{ inputs.dry_run }}
+          ${{ runner.debug && '-X' || '' }}
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
-
-      - name: 'Maven Perform release'
-        id: maven-perform-release
+      - name: 'Inject tag to perform release'
+        id: prepare-perform-release
         if: github.event.inputs.perform_version != ''
         shell: 'sh'
         # See https://issues.apache.org/jira/browse/SCM-729 for why the release.properties file is required.
@@ -126,7 +115,22 @@ jobs:
         run: |
           echo "scm.url=scm\:git\:git@github.com\:${GITHUB_REPOSITORY}.git" > release.properties
           echo "scm.tag=${{ github.event.inputs.perform_version }}" >> release.properties
-          mvn release:perform -DreleaseProfiles=release -DdryRun=${{ inputs.dry_run }}
+      - name: 'Maven Perform release'
+        id: maven-perform-release
+        if: github.event.inputs.perform_version != ''
+        shell: 'sh'
+        run: >-
+          mvn release:perform 
+          -DreleaseProfiles=release
+          ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
+          -DdryRun=${{ inputs.dry_run }}
+          ${{ runner.debug && '-X' || '' }}
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
+
       - name: Rollback on failure
         id: maven-rollback-release
         if: failure()
@@ -134,8 +138,3 @@ jobs:
         run: |
           mvn -B release:rollback
           echo "You may need to manually delete the git tag, if it was created."
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
-          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
-          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
