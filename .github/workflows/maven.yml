@@ -121,3 +121,8 @@ jobs:
       additional_profiles: ${{ inputs.additional_profiles }}
       deploy: true
       skip_test_publish: ${{ inputs.skip_test_publish }}
+
+  debug:
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
