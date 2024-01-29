@@ -31,6 +31,10 @@ on:
         description: 'Should maven deploy be called'
         default: false
         type: boolean
+      skip_test_publish:
+        description: 'Skip publishing of test report'
+        default: false
+        type: boolean
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -51,7 +55,7 @@ jobs:
           fetch-depth: 0
       - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
         id: github-debug
-        #if: runner.debug
+        if: runner.debug
       - uses: connectorio/gh-actions-shared/.github/actions/setup-java@master
         id: setup
         with:
@@ -104,11 +108,11 @@ jobs:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
       - name: 'Publish Test Report'
-        if: success() || failure()
+        if: ${{ !inputs.skip_test_publish && (success() || failure()) }}
         uses: scacap/action-surefire-report@v1
       - name: 'Upload Test Report'
         uses: actions/upload-artifact@v3
-        if: success() || failure()
+        if: ${{ !inputs.skip_test_publish && (success() || failure()) }}
         with:
           name: 'java-test-report-${{ runner.os }}-java-${{ inputs.java_version }}'
           path: |

@@ -27,6 +27,10 @@ on:
         description: 'Should maven deploy be called'
         default: false
         type: boolean
+      skip_test_publish:
+        description: 'Skip publishing of test report'
+        default: false
+        type: boolean
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -56,6 +60,7 @@ jobs:
       java_version: ${{ inputs.java_version }}
       additional_profiles: ${{ inputs.additional_profiles }}
       deploy: ${{ inputs.deploy }}
+      skip_test_publish: ${{ inputs.skip_test_publish }}
 
   build_oh3:
     # github.base_ref points to target branch of pull request, head_ref is branch from which PR is made
@@ -80,6 +85,7 @@ jobs:
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
       deploy: true
+      skip_test_publish: ${{ inputs.skip_test_publish }}
 
   build_oh4:
     if: ${{ inputs.openhab && github.ref_type == 'branch' && (startsWith(github.ref_name, '4.') || startsWith(github.base_ref, '4.')) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
@@ -102,3 +108,4 @@ jobs:
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
       deploy: true
+      skip_test_publish: ${{ inputs.skip_test_publish }}
