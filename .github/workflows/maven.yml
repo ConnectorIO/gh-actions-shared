@@ -27,13 +27,6 @@ on:
         description: 'Should maven deploy be called'
         default: false
         type: boolean
-    secrets:
-      CI_DEPLOY_USERNAME:
-        required: true
-        description: 'Username used for deployment'
-      CI_DEPLOY_PASSWORD:
-        required: true
-        description: 'Password used for deployment'
 
 jobs:
   build:
