@@ -113,7 +113,7 @@ jobs:
         if: success()
         shell: 'sh'
         run: >-
-          mvn -B -nsu package deploy
+          mvn -B -nsu deploy
           -Dmaven.test.skip=true
           -DretryFailedDeploymentCount=3
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
