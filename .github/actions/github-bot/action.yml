@@ -4,11 +4,11 @@ description: Setup bot account for write access to github repository.
 inputs:
   bot_name:
     description: 'Bot account name'
-    default: 'ci@connectorio.com'
+    default: 'ConnectorIO Bot'
     required: true
   bot_email:
     description: 'Bot account email'
-    default: 'ConnectorIO Bot'
+    default: 'ci@connectorio.com'
     required: true
   # secrets
   GITHUB_TOKEN:
