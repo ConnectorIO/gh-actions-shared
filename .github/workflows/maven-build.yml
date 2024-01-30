@@ -16,8 +16,8 @@ on:
       java_version:
         description: 'Java version used for build, used only when openhab input is not true'
         required: false
-        default: 11
-        type: number
+        default: '11'
+        type: string
       additional_profiles:
         description: 'Profiles which should be activated during the build'
         required: false

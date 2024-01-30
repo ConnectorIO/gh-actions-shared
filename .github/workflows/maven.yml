@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      master_branch:
+        description: 'Determine if repository uses master branch in openHAB mode and in which version it is expected to operate (v 3 or 4)'
+        required: false
+        default: ''
+        type: string
       server_id:
         description: 'Server id used in case if results are deployed'
         required: false
@@ -66,7 +71,12 @@ jobs:
   build_oh3:
     # github.base_ref points to target branch of pull request, head_ref is branch from which PR is made
     # github.ref_name is set when git push is made
-    if: ${{ inputs.openhab && github.ref_type == 'branch' && (startsWith(github.ref_name, '3.') || startsWith(github.base_ref, '3.')) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    if: >-
+      ${{ 
+      inputs.openhab && github.ref_type == 'branch'
+      && (startsWith(github.ref_name, '3.') || startsWith(github.base_ref, '3.') || (inputs.master_branch == '3' && (github.ref_name == 'master' || github.base_ref == 'master')))
+      && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release')
+      }}
     permissions:
       checks: write
       contents: read
@@ -89,7 +99,12 @@ jobs:
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
   build_oh4:
-    if: ${{ inputs.openhab && github.ref_type == 'branch' && (startsWith(github.ref_name, '4.') || startsWith(github.base_ref, '4.')) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    if: >-
+      ${{
+      inputs.openhab && github.ref_type == 'branch'
+      && (startsWith(github.ref_name, '4.') || startsWith(github.base_ref, '4.') || (inputs.master_branch == '4' && (github.ref_name == 'master' || github.base_ref == 'master')))
+      && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release')
+      }}
     permissions:
       checks: write
       contents: read
