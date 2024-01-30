@@ -35,18 +35,6 @@ on:
         description: 'Skip publishing of test report'
         default: false
         type: boolean
-
-      # sonar settings
-      sonar_organization:
-        description: 'Sonar cloud organization'
-        type: string
-      sonar_project_key:
-        description: 'Sonar cloud project key'
-        type: string
-      sonar_host_url:
-        description: 'Sonar cloud URL'
-        default: 'https://sonarcloud.io'
-        type: string
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -100,11 +88,7 @@ jobs:
         shell: 'sh'
         run: >-
           mvn -B -fae clean verify
-          ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
-          ${{ inputs.sonar_project_key
-            && format('org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey={0} -Dsonar.organization={1} -Dsonar.host.url={2}', inputs.sonar_organization, inputs.sonar_project_key, inputs.sonar_host_url)
-            || ''
-          }}
+          ${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}
           ${{ runner.debug && '-X' || '' }}
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}

@@ -1,7 +1,7 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       openhab:
         description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
@@ -12,17 +12,23 @@ on:
         description: 'The version to be released from actual HEAD revision'
         required: false
         default: 'X.Y.Z'
+        type: string
       development_version:
         description: 'Version to be set as next, after release is made (appends commit to HEAD revision)'
         required: false
         default: 'X.Y.Z-SNAPSHOT'
+        type: string
       perform_version:
         description: 'Tag which should be used to perform release and publish its artifacts'
+        default: 'X.Y.Z'
         required: false
+        type: string
       dry_run:
+        # github have troubles handing this as a boolean
         description: 'Should execution abstain from mutating repository/remote state?'
         required: true
         default: 'true'
+        type: string
 
       server_id:
         description: 'Server id used in case if results are deployed'
@@ -64,7 +70,7 @@ jobs:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
-      dry_run: ${{ inputs.dry_run }}
+      dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
       server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
 
@@ -84,7 +90,7 @@ jobs:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
-      dry_run: ${{ inputs.dry_run }}
+      dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
       server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
 
@@ -103,6 +109,6 @@ jobs:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
-      dry_run: ${{ inputs.dry_run }}
+      dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
       server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}

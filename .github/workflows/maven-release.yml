@@ -25,7 +25,7 @@ on:
       dry_run:
         description: 'Should execution abstain from mutating repository/remote state?'
         required: true
-        default: 'true'
+        default: true
         type: boolean
 
       server_id:
@@ -61,30 +61,26 @@ on:
 jobs:
   build:
     permissions:
-      checks: write
-      contents: read
+      contents: write
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
       - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
+        if: runner.debug
         id: github-debug
-      - uses: ./.github/actions/github-bot
+      - uses: connectorio/gh-actions-shared/.github/actions/github-bot@master
         id: github-bot
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/actions/setup-java
-        id: setup
-        with:
-          java-version: ${{ inputs.java_version }}
-          distribution: 'temurin'
-          server_id: ${{ inputs.server_id }}
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - uses: connectorio/gh-actions-shared/.github/actions/setup-java@master
         id: setup
         with:
           java_version: ${{ inputs.java_version }}
+          distribution: 'temurin'
           server_id: ${{ inputs.server_id }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       - id: debug-secrets
+        if: runner.debug
         env:
           SECRETS_VARS: ${{ toJson(secrets) }}
         run: echo "$SECRETS_VARS"
@@ -93,7 +89,7 @@ jobs:
           key: ${{ hashFiles('**/pom.xml') }}
       - name: 'Maven Prepare Release'
         id: maven-prepare-release
-        if: github.event.inputs.perform_version == '' && github.event.inputs.release_version != '' && github.event.inputs.development_version != ''
+        if: github.event.inputs.release_version != '' && github.event.inputs.development_version != ''
         shell: 'sh'
         run: >-
           mvn -B
