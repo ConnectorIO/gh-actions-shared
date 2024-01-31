@@ -72,9 +72,10 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: 'bash'
         run: |
-          baseVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout)
+          profiles='${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}';
+          baseVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
           pullRequestId="pr-${{ github.event.pull_request.number }}"
-          mvn versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"}
+          mvn versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"} $profiles -Dcicd=true
       - name: 'Dump build environment for debug purposes'
         id: env-debug
         if: runner.debug
@@ -87,7 +88,7 @@ jobs:
       - name: 'Build with Maven'
         shell: 'sh'
         run: >-
-          mvn -B -fae clean verify
+          mvn -B -fae clean verify -Dcicd=true
           ${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}
           ${{ runner.debug && '-X' || '' }}
         env:
@@ -97,7 +98,7 @@ jobs:
         if: success()
         shell: 'sh'
         run: >-
-          mvn -B -nsu deploy
+          mvn -B -nsu deploy -Dcicd=true
           -Dmaven.test.skip=true
           -DretryFailedDeploymentCount=3
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
