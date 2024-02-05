@@ -106,6 +106,10 @@ jobs:
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      - name: 'Remove snapshots from local repository'
+        shell: sh
+        run: >-
+          find ~/.m2/repository -type d -name '-SNAPSHOT' -exec rm -rf {} \; -print
       - name: 'Publish Test Report'
         if: ${{ !inputs.skip_test_publish && (success() || failure()) }}
         uses: scacap/action-surefire-report@v1

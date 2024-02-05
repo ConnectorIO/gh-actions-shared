@@ -71,7 +71,6 @@ jobs:
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
     with:
-      openhab: ${{ inputs.openhab }}
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
@@ -82,7 +81,7 @@ jobs:
 
   release_oh3:
     # github.ref is set with workflow dispatch event
-    if: ${{ inputs.openhab && startsWith(github.ref, '3.') }}
+    if: ${{ inputs.openhab && startsWith(github.ref_name, '3.') }}
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
@@ -92,17 +91,16 @@ jobs:
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
     with:
-      openhab: ${{ inputs.openhab }}
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
       server_id: ${{ inputs.server_id }}
-      java_version: ${{ inputs.java_version }}
+      java_version: 11
       additional_profiles: ${{ inputs.additional_profiles }}
 
   release_oh4:
-    if: ${{ inputs.openhab && startsWith(github.ref, '4.') }}
+    if: ${{ inputs.openhab && startsWith(github.ref_name, '4.') }}
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
@@ -112,11 +110,10 @@ jobs:
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
     with:
-      openhab: ${{ inputs.openhab }}
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
       server_id: ${{ inputs.server_id }}
-      java_version: ${{ inputs.java_version }}
+      java_version: 17
       additional_profiles: ${{ inputs.additional_profiles }}

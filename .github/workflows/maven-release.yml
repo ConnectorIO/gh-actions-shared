@@ -3,11 +3,6 @@ name: Maven release
 on:
   workflow_call:
     inputs:
-      openhab:
-        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
-        required: false
-        default: false
-        type: boolean
       release_version:
         description: 'The version to be released from actual HEAD revision'
         required: false
@@ -34,7 +29,7 @@ on:
         default: 'sonatype-nexus-staging'
         type: string
       java_version:
-        description: 'Java version used for build, used only when openhab input is not true'
+        description: 'Java version used for build'
         required: false
         default: 11
         type: number
