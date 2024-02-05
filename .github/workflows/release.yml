@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      master_branch:
+        description: 'Determine if repository uses master branch in openHAB mode and in which version it is expected to operate (v 3 or 4)'
+        required: false
+        default: ''
+        type: string
       release_version:
         description: 'The version to be released from actual HEAD revision'
         required: false
@@ -81,7 +86,7 @@ jobs:
 
   release_oh3:
     # github.ref is set with workflow dispatch event
-    if: ${{ inputs.openhab && startsWith(github.ref_name, '3.') }}
+    if: ${{ inputs.openhab && startsWith(github.ref_name, '3.') || (inputs.master_branch == '3' && github.ref_name == 'master') }}
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
@@ -100,7 +105,7 @@ jobs:
       additional_profiles: ${{ inputs.additional_profiles }}
 
   release_oh4:
-    if: ${{ inputs.openhab && startsWith(github.ref_name, '4.') }}
+    if: ${{ inputs.openhab && startsWith(github.ref_name, '4.') || (inputs.master_branch == '4' && github.ref_name == 'master') }}
     permissions:
       contents: write
     uses: './.github/workflows/maven-release.yml'
