@@ -9,9 +9,9 @@ on:
         default: false
         type: boolean
       master_branch:
-        description: 'Determine if repository uses master branch in openHAB mode and in which version it is expected to operate (v 3 or 4)'
+        description: 'Determine if repository uses master branch and, if build uses openHAB mode, in which OH version it is expected to operate (v 3 or 4)'
         required: false
-        default: ''
+        default: 'master'
         type: string
       server_id:
         description: 'Server id used in case if results are deployed'
@@ -47,7 +47,7 @@ on:
 jobs:
   build:
     # Build if PR targets master branch or commits were pushed to master branch
-    if: ${{ !inputs.openhab && github.ref_type == 'branch' && (github.base_ref == 'master' || github.ref_name == 'master') && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
+    if: ${{ !inputs.openhab && github.ref_type == 'branch' && (github.base_ref == inputs.master_branch || github.ref_name == inputs.master_branch) && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release') }}
     permissions:
       checks: write
       contents: read
