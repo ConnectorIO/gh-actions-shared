@@ -95,7 +95,7 @@ jobs:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
       - name: 'Maven Deploy'
-        if: success()
+        if: ${{ success() && inputs.deploy || false }}
         shell: 'sh'
         run: >-
           mvn -B -nsu deploy -Dcicd=true
