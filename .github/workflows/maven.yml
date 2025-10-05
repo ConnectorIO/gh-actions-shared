@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       openhab:
-        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
+        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17, 5.*=java 21)'
         required: false
         default: false
         type: boolean
       master_branch:
-        description: 'Determine if repository uses master branch and, if build uses openHAB mode, in which OH version it is expected to operate (v 3 or 4)'
+        description: 'Determine if repository uses master branch and, if build uses openHAB mode, in which OH version it is expected to operate (v 3 or 4 or 5)'
         required: false
         default: 'master'
         type: string
@@ -111,6 +111,34 @@ jobs:
     strategy:
       matrix:
         java: [ '17' ]
+        os: [ 'ubuntu-latest' ]
+      fail-fast: false
+    uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
+    secrets:
+      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+    with:
+      matrix_os: ${{ matrix.os }}
+      openhab: ${{ inputs.openhab }}
+      server_id: ${{ inputs.server_id }}
+      java_version: ${{ matrix.java }}
+      additional_profiles: ${{ inputs.additional_profiles }}
+      deploy: true
+      skip_test_publish: ${{ inputs.skip_test_publish }}
+
+  build_oh5:
+    if: >-
+      ${{
+      inputs.openhab && github.ref_type == 'branch'
+      && (startsWith(github.ref_name, '5.') || startsWith(github.base_ref, '5.') || (inputs.master_branch == '5' && (github.ref_name == 'master' || github.base_ref == 'master')))
+      && !contains(github.event.commits[0].message, '[maven-release-plugin] prepare release')
+      }}
+    permissions:
+      checks: write
+      contents: read
+    strategy:
+      matrix:
+        java: [ '21' ]
         os: [ 'ubuntu-latest' ]
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'

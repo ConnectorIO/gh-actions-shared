@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       openhab:
-        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17)'
+        description: 'Turns "openHAB" mode for build which assume certain branch policies (3.*=java 11, 4.*=java 17, 5.*=java 21)'
         required: false
         default: false
         type: boolean
