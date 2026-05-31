@@ -30,7 +30,7 @@ on:
         type: string
       deploy:
         description: 'Should maven deploy be called'
-        default: false
+        default: true
         type: boolean
       skip_test_publish:
         description: 'Skip publishing of test report'
@@ -95,7 +95,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
-      deploy: true
+      deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
   build_oh4:
@@ -123,7 +123,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
-      deploy: true
+      deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
   build_oh5:
@@ -151,7 +151,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
-      deploy: true
+      deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
   debug:
