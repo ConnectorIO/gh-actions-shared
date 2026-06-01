@@ -53,6 +53,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - id: install-mvnd
+        uses: connectorio/gh-actions-shared/.github/actions/install-mvnd@master
       - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
         id: github-debug
         if: runner.debug
@@ -88,7 +90,7 @@ jobs:
       - name: 'Build with Maven'
         shell: 'sh'
         run: >-
-          mvn -B -ntp -fae clean verify -Dcicd=true
+          ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd -B -ntp -fae clean verify -Dcicd=true
           ${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}
           ${{ runner.debug && '-X' || '' }}
         env:
@@ -98,7 +100,7 @@ jobs:
         if: ${{ success() && inputs.deploy || false }}
         shell: 'sh'
         run: >-
-          mvn -B -ntp -nsu deploy -Dcicd=true
+          ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd -B -ntp -nsu deploy -Dcicd=true
           -Dmaven.test.skip=true
           -DretryFailedDeploymentCount=3
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
