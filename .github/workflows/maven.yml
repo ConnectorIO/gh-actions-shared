@@ -28,6 +28,11 @@ on:
         required: false
         default: ''
         type: string
+      additional_options:
+        description: 'Additional build options'
+        required: false
+        default: ''
+        type: string
       deploy:
         description: 'Should maven deploy be called'
         default: true
@@ -65,6 +70,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
       additional_profiles: ${{ inputs.additional_profiles }}
+      additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
@@ -95,6 +101,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
+      additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
@@ -123,6 +130,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
+      additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
@@ -151,6 +159,7 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
+      additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
 
