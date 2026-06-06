@@ -58,8 +58,6 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
         with:
           fetch-depth: 0
-      - id: install-mvnd
-        uses: connectorio/gh-actions-shared/.github/actions/install-mvnd@master
       - uses: connectorio/gh-actions-shared/.github/actions/github-debug-action@master
         id: github-debug
         if: runner.debug
@@ -95,7 +93,13 @@ jobs:
       - name: 'Build with Maven'
         shell: 'sh'
         run: >-
-          ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd -B -ntp -fae clean verify -Dcicd=true
+          mvn -B -V -e -ntp -fae clean verify -Dcicd=true
+          -Daether.connector.http.connectionMaxTtl=120
+          -Daether.connector.requestTimeout=300000
+          -Daether.dependencyCollector.impl=bf
+          -Dmaven.artifact.threads=25
+          -Dsurefire.rerunFailingTestsCount=2
+          -Dfailsafe.rerunFailingTestsCount=2
           ${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}
           ${{ inputs.additional_options || '' }}
           ${{ runner.debug && '-X' || '' }}
@@ -106,7 +110,13 @@ jobs:
         if: ${{ success() && inputs.deploy || false }}
         shell: 'sh'
         run: >-
-          ${{ steps.install-mvnd.outputs.mvnd-dir }}/mvnd -B -ntp -nsu deploy -Dcicd=true
+          mvn -B -V -e -ntp -nsu deploy -Dcicd=true
+          -Daether.connector.http.connectionMaxTtl=120
+          -Daether.connector.requestTimeout=300000
+          -Daether.dependencyCollector.impl=bf
+          -Dmaven.artifact.threads=25
+          -Dsurefire.rerunFailingTestsCount=2
+          -Dfailsafe.rerunFailingTestsCount=2
           -Dmaven.test.skip=true
           -DretryFailedDeploymentCount=3
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
