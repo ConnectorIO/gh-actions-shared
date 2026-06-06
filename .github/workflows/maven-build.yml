@@ -78,9 +78,9 @@ jobs:
         shell: 'bash'
         run: |
           profiles='${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}';
-          baseVersion=$(mvn -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
+          baseVersion=$(mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
           pullRequestId="pr-${{ github.event.pull_request.number }}"
-          mvn versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"} $profiles -Dcicd=true
+          mvn -B -ntp versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"} $profiles -Dcicd=true
       - name: 'Dump build environment for debug purposes'
         id: env-debug
         if: runner.debug
