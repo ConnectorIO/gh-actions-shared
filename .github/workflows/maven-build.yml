@@ -78,6 +78,7 @@ jobs:
         shell: 'bash'
         run: |
           profiles='${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}';
+          mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true
           baseVersion=$(mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
           pullRequestId="pr-${{ github.event.pull_request.number }}"
           mvn -B -ntp versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"} $profiles -Dcicd=true
