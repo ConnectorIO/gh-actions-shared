@@ -50,6 +50,23 @@ on:
         required: false
         default: ''
         type: string
+      mvn_credentials:
+        description: >-
+          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
+          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+        required: false
+        default: ''
+        type: string
+      mvn_repositories:
+        description: 'Additional repositories, one per line: repository-id:url:snapshots-enabled'
+        required: false
+        default: ''
+        type: string
+      mvn_plugin_repositories:
+        description: 'Additional plugin repositories, same format as mvn_repositories (defaults to mvn_repositories)'
+        required: false
+        default: ''
+        type: string
     secrets:
       GPG_PASSPHRASE:
         required: true
@@ -63,6 +80,11 @@ on:
       CI_RELEASE_PASSWORD:
         required: true
         description: 'Password used for deployment'
+      MAVEN_SECRETS:
+        required: false
+        description: >-
+          JSON object with additional secrets referenced by mvn_credentials, i.e.
+          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
 
 jobs:
   release:
@@ -75,6 +97,7 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
@@ -83,6 +106,9 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
       additional_profiles: ${{ inputs.additional_profiles }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   release_oh3:
     # github.ref is set with workflow dispatch event
@@ -95,6 +121,7 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
@@ -103,6 +130,9 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: 11
       additional_profiles: ${{ inputs.additional_profiles }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   release_oh4:
     if: ${{ inputs.openhab && startsWith(github.ref_name, '4.') || (inputs.master_branch == '4' && github.ref_name == 'master') }}
@@ -114,6 +144,7 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
@@ -122,6 +153,9 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: 17
       additional_profiles: ${{ inputs.additional_profiles }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   release_oh5:
     if: ${{ inputs.openhab && startsWith(github.ref_name, '5.') || (inputs.master_branch == '5' && github.ref_name == 'master') }}
@@ -133,6 +167,7 @@ jobs:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
       CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
@@ -141,3 +176,6 @@ jobs:
       server_id: ${{ inputs.server_id }}
       java_version: 21
       additional_profiles: ${{ inputs.additional_profiles }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}

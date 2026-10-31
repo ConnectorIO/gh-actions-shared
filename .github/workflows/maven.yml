@@ -41,6 +41,23 @@ on:
         description: 'Skip publishing of test report'
         default: false
         type: boolean
+      mvn_credentials:
+        description: >-
+          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
+          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+        required: false
+        default: ''
+        type: string
+      mvn_repositories:
+        description: 'Additional repositories, one per line: repository-id:url:snapshots-enabled'
+        required: false
+        default: ''
+        type: string
+      mvn_plugin_repositories:
+        description: 'Additional plugin repositories, same format as mvn_repositories (defaults to mvn_repositories)'
+        required: false
+        default: ''
+        type: string
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -48,6 +65,11 @@ on:
       CI_DEPLOY_PASSWORD:
         required: true
         description: 'Password used for deployment'
+      MAVEN_SECRETS:
+        required: false
+        description: >-
+          JSON object with additional secrets referenced by mvn_credentials, i.e.
+          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
 
 jobs:
   build:
@@ -64,6 +86,7 @@ jobs:
     secrets:
       CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
       CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
@@ -73,6 +96,9 @@ jobs:
       additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   build_oh3:
     # github.base_ref points to target branch of pull request, head_ref is branch from which PR is made
@@ -95,6 +121,7 @@ jobs:
     secrets:
       CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
       CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
@@ -104,6 +131,9 @@ jobs:
       additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   build_oh4:
     if: >-
@@ -124,6 +154,7 @@ jobs:
     secrets:
       CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
       CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
@@ -133,6 +164,9 @@ jobs:
       additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   build_oh5:
     if: >-
@@ -153,6 +187,7 @@ jobs:
     secrets:
       CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
       CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+      MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
@@ -162,6 +197,9 @@ jobs:
       additional_options: ${{ inputs.additional_options }}
       deploy: ${{ inputs.deploy }}
       skip_test_publish: ${{ inputs.skip_test_publish }}
+      mvn_credentials: ${{ inputs.mvn_credentials }}
+      mvn_repositories: ${{ inputs.mvn_repositories }}
+      mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
 
   debug:
     runs-on: 'ubuntu-latest'

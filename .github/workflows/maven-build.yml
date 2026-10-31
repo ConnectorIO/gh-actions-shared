@@ -40,6 +40,23 @@ on:
         description: 'Skip publishing of test report'
         default: false
         type: boolean
+      mvn_credentials:
+        description: >-
+          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
+          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+        required: false
+        default: ''
+        type: string
+      mvn_repositories:
+        description: 'Additional repositories, one per line: repository-id:url:snapshots-enabled'
+        required: false
+        default: ''
+        type: string
+      mvn_plugin_repositories:
+        description: 'Additional plugin repositories, same format as mvn_repositories (defaults to mvn_repositories)'
+        required: false
+        default: ''
+        type: string
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -47,6 +64,11 @@ on:
       CI_DEPLOY_PASSWORD:
         required: true
         description: 'Password used for deployment'
+      MAVEN_SECRETS:
+        required: false
+        description: >-
+          JSON object with additional secrets referenced by mvn_credentials, i.e.
+          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
 
 jobs:
   build:
@@ -66,7 +88,11 @@ jobs:
         with:
           java_version: ${{ inputs.java_version }}
           server_id: ${{ inputs.server_id }}
+          mvn_credentials: ${{ inputs.mvn_credentials }}
+          mvn_repositories: ${{ inputs.mvn_repositories }}
+          mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
       - id: debug-secrets
+        if: runner.debug
         env:
           SECRETS_VARS: ${{ toJson(secrets) }}
         run: echo "$SECRETS_VARS"
@@ -77,6 +103,7 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: 'bash'
         run: |
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}"
           profiles='${{ inputs.additional_profiles && format('-P {0},cicd', inputs.additional_profiles) || '-Pcicd' }}';
           mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true
           baseVersion=$(mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
@@ -85,18 +112,27 @@ jobs:
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
       - name: 'Dump build environment for debug purposes'
         id: env-debug
         if: runner.debug
         shell: 'sh'
-        run: >
-          cat ~/.m2/settings.xml && env
+        # same environment as maven steps; variable names only, so no secret value is printed
+        run: |
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}"
+          cat ~/.m2/settings.xml
+          echo "Environment variables available to maven:"
+          env | sort
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
       - name: 'Build with Maven'
         shell: 'sh'
         run: >-
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}" &&
           mvn -B -V -e -ntp -fae clean verify -Dcicd=true
           -Daether.connector.http.connectionMaxTtl=120
           -Daether.connector.requestTimeout=300000
@@ -110,10 +146,13 @@ jobs:
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
       - name: 'Maven Deploy'
         if: ${{ success() && inputs.deploy || false }}
         shell: 'sh'
         run: >-
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}" &&
           mvn -B -V -e -ntp -nsu deploy -Dcicd=true
           -Daether.connector.http.connectionMaxTtl=120
           -Daether.connector.requestTimeout=300000
@@ -129,6 +168,8 @@ jobs:
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
       - name: 'Remove snapshots from local repository'
         shell: sh
         run: >-

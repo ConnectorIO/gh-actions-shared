@@ -30,6 +30,24 @@ inputs:
     description: 'GPG key to sign artifacts'
     required: false
 
+  # additional maven servers and repositories
+  mvn_credentials:
+    description: >-
+      Additional Maven servers, one per line in format server-id:USERNAME_ENV:PASSWORD_ENV.
+      Entries are appended after the default server_id entry and passed to setup-java mvn-server-credentials.
+    required: false
+    default: ''
+  mvn_repositories:
+    description: 'Additional repositories, one per line in format repository-id:url:snapshots-enabled'
+    required: false
+    default: ''
+  mvn_plugin_repositories:
+    description: >-
+      Additional plugin repositories, one per line in format repository-id:url:snapshots-enabled.
+      Defaults to mvn_repositories when empty.
+    required: false
+    default: ''
+
 outputs:
   ENV_SERVER_USERNAME:
     value: ${{ steps.generate-outputs.outputs.SERVER_USERNAME }}
@@ -40,25 +58,39 @@ outputs:
   ENV_GPG_PASSPHRASE:
     value: ${{ steps.generate-outputs.outputs.GPG_PASSPHRASE }}
     description: 'GPG_PASSPHRASE environment variable set up by this action'
+  POPULATE_SECRETS:
+    value: ${{ steps.generate-outputs.outputs.POPULATE_SECRETS }}
+    description: >-
+      Path to script which exports secrets whitelisted in MVN_CREDENTIALS env (looked up in MVN_SECRETS_JSON env, i.e. toJson(secrets)).
+      Source it in the shell which calls maven: . "$POPULATE_SECRETS" && mvn ...
 
 runs:
   using: 'composite'
   steps:
     - name: 'Set up Java ${{ inputs.java_version }}@${{ inputs.distribution }}'
-      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # 6.1.0
       with:
         java-version: ${{ inputs.java_version }}
         distribution: ${{ inputs.distribution }}
+        # used by setup-java only when mvn-server-credentials below is blank (same behavior as before v6)
         server-id: ${{ inputs.server_id }}
-        server-username: ${{ inputs.SERVER_USERNAME }}
-        server-password: ${{ inputs.SERVER_PASSWORD }}
-        gpg-passphrase: GPG_PASSPHRASE
+        server-username-env-var: ${{ inputs.SERVER_USERNAME }}
+        server-password-env-var: ${{ inputs.SERVER_PASSWORD }}
+        # default server is included only when fully specified, setup-java rejects partial entries
+        mvn-server-credentials: |
+          ${{ (inputs.server_id != '' && inputs.SERVER_USERNAME != '' && inputs.SERVER_PASSWORD != '') && format('{0}:{1}:{2}', inputs.server_id, inputs.SERVER_USERNAME, inputs.SERVER_PASSWORD) || '' }}
+          ${{ inputs.mvn_credentials }}
+        mvn-repositories: ${{ inputs.mvn_repositories }}
+        mvn-plugin-repositories: ${{ inputs.mvn_plugin_repositories || inputs.mvn_repositories }}
+        gpg-passphrase-env-var: GPG_PASSPHRASE
         gpg-private-key: ${{ inputs.GPG_PRIVATE_KEY }}
     - name: 'Produce action outputs'
       id: generate-outputs
       shell: 'sh'
       run: |
+        cat ~/.m2/settings.xml
         echo "SERVER_USERNAME=${{ inputs.SERVER_USERNAME }}" >> $GITHUB_OUTPUT
         echo "SERVER_PASSWORD=${{ inputs.SERVER_PASSWORD }}" >> $GITHUB_OUTPUT
         echo "GPG_PASSPHRASE=GPG_PASSPHRASE" >> $GITHUB_OUTPUT
+        echo "POPULATE_SECRETS=$GITHUB_ACTION_PATH/populate-secrets.sh" >> $GITHUB_OUTPUT
         cat $GITHUB_OUTPUT
