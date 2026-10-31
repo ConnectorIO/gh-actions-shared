@@ -82,6 +82,9 @@ jobs:
           baseVersion=$(mvn -B -ntp org.apache.maven.plugins:maven-help-plugin:3.4.0:evaluate -Dexpression=project.version -q -DforceStdout $profiles -Dcicd=true)
           pullRequestId="pr-${{ github.event.pull_request.number }}"
           mvn -B -ntp versions:set -DnewVersion=${baseVersion//-/"-$pullRequestId-"} $profiles -Dcicd=true
+        env:
+          ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_DEPLOY_USERNAME }}
+          ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_DEPLOY_PASSWORD }}
       - name: 'Dump build environment for debug purposes'
         id: env-debug
         if: runner.debug
