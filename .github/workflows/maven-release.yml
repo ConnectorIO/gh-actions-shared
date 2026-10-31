@@ -38,6 +38,23 @@ on:
         required: false
         default: ''
         type: string
+      mvn_credentials:
+        description: >-
+          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
+          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+        required: false
+        default: ''
+        type: string
+      mvn_repositories:
+        description: 'Additional repositories, one per line: repository-id:url:snapshots-enabled'
+        required: false
+        default: ''
+        type: string
+      mvn_plugin_repositories:
+        description: 'Additional plugin repositories, same format as mvn_repositories (defaults to mvn_repositories)'
+        required: false
+        default: ''
+        type: string
 
     secrets:
       GPG_PASSPHRASE:
@@ -52,6 +69,11 @@ on:
       CI_RELEASE_PASSWORD:
         required: true
         description: 'Password used for deployment'
+      MAVEN_SECRETS:
+        required: false
+        description: >-
+          JSON object with additional secrets referenced by mvn_credentials, i.e.
+          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
 
 jobs:
   build:
@@ -74,6 +96,9 @@ jobs:
           distribution: 'temurin'
           server_id: ${{ inputs.server_id }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          mvn_credentials: ${{ inputs.mvn_credentials }}
+          mvn_repositories: ${{ inputs.mvn_repositories }}
+          mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
       - id: debug-secrets
         if: runner.debug
         env:
@@ -87,6 +112,7 @@ jobs:
         if: github.event.inputs.release_version != '' && github.event.inputs.development_version != ''
         shell: 'sh'
         run: >-
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}" &&
           mvn -B
           release:prepare
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
@@ -97,6 +123,8 @@ jobs:
         env:
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
       - name: 'Inject tag to perform release'
         id: prepare-perform-release
         if: github.event.inputs.perform_version != ''
@@ -111,7 +139,8 @@ jobs:
         if: github.event.inputs.perform_version != ''
         shell: 'sh'
         run: >-
-          mvn release:perform 
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}" &&
+          mvn release:perform
           -DreleaseProfiles=release
           ${{ inputs.additional_profiles && format('-P {0}', inputs.additional_profiles) || '' }}
           -DdryRun=${{ inputs.dry_run }}
@@ -121,11 +150,17 @@ jobs:
           ${{ steps.setup.outputs.ENV_GPG_PASSPHRASE }}: ${{ secrets.GPG_PASSPHRASE }}
           ${{ steps.setup.outputs.ENV_SERVER_USERNAME }}: ${{ secrets.CI_RELEASE_USERNAME }}
           ${{ steps.setup.outputs.ENV_SERVER_PASSWORD }}: ${{ secrets.CI_RELEASE_PASSWORD }}
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
 
       - name: Rollback on failure
         id: maven-rollback-release
         if: failure()
         shell: 'sh'
         run: |
+          . "${{ steps.setup.outputs.POPULATE_SECRETS }}"
           mvn -B release:rollback
           echo "You may need to manually delete the git tag, if it was created."
+        env:
+          MVN_CREDENTIALS: ${{ inputs.mvn_credentials }}
+          MVN_SECRETS_JSON: ${{ toJson(secrets) }}
