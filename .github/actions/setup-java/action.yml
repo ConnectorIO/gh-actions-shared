@@ -47,6 +47,12 @@ inputs:
       Defaults to mvn_repositories when empty.
     required: false
     default: ''
+  mvn_server_origins:
+    description: >-
+      Repository origins allowed to use server credentials, one per line in format server-id:origin
+      (scheme://host[:port], no path). Passed to setup-java mvn-server-repository-origins. Requires Maven 3.10+.
+    required: false
+    default: ''
 
 outputs:
   ENV_SERVER_USERNAME:
@@ -82,6 +88,7 @@ runs:
           ${{ inputs.mvn_credentials }}
         mvn-repositories: ${{ inputs.mvn_repositories }}
         mvn-plugin-repositories: ${{ inputs.mvn_plugin_repositories || inputs.mvn_repositories }}
+        mvn-server-repository-origins: ${{ inputs.mvn_server_origins }}
         gpg-passphrase-env-var: GPG_PASSPHRASE
         gpg-private-key: ${{ inputs.GPG_PRIVATE_KEY }}
     - name: 'Produce action outputs'

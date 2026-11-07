@@ -67,6 +67,13 @@ on:
         required: false
         default: ''
         type: string
+      mvn_server_origins:
+        description: >-
+          Repository origins allowed to use server credentials, one per line: server-id:origin
+          (i.e. thing4-snapshots:https://repository.connectorio.cloud). Requires Maven 3.10+.
+        required: false
+        default: ''
+        type: string
     secrets:
       GPG_PASSPHRASE:
         required: true
@@ -109,6 +116,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   release_oh3:
     # github.ref is set with workflow dispatch event
@@ -133,6 +141,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   release_oh4:
     if: ${{ inputs.openhab && startsWith(github.ref_name, '4.') || (inputs.master_branch == '4' && github.ref_name == 'master') }}
@@ -156,6 +165,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   release_oh5:
     if: ${{ inputs.openhab && startsWith(github.ref_name, '5.') || (inputs.master_branch == '5' && github.ref_name == 'master') }}
@@ -179,3 +189,4 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}

@@ -58,6 +58,13 @@ on:
         required: false
         default: ''
         type: string
+      mvn_server_origins:
+        description: >-
+          Repository origins allowed to use server credentials, one per line: server-id:origin
+          (i.e. thing4-snapshots:https://repository.connectorio.cloud). Requires Maven 3.10+.
+        required: false
+        default: ''
+        type: string
     secrets:
       CI_DEPLOY_USERNAME:
         required: true
@@ -99,6 +106,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   build_oh3:
     # github.base_ref points to target branch of pull request, head_ref is branch from which PR is made
@@ -134,6 +142,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   build_oh4:
     if: >-
@@ -167,6 +176,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   build_oh5:
     if: >-
@@ -200,6 +210,7 @@ jobs:
       mvn_credentials: ${{ inputs.mvn_credentials }}
       mvn_repositories: ${{ inputs.mvn_repositories }}
       mvn_plugin_repositories: ${{ inputs.mvn_plugin_repositories }}
+      mvn_server_origins: ${{ inputs.mvn_server_origins }}
 
   debug:
     runs-on: 'ubuntu-latest'
