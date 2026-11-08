@@ -35,11 +35,6 @@ on:
         default: 'true'
         type: string
 
-      server_id:
-        description: 'Server id used in case if results are deployed'
-        required: false
-        default: 'sonatype-nexus-staging'
-        type: string
       java_version:
         description: 'Java version used for build, used only when openhab input is not true'
         required: false
@@ -52,8 +47,7 @@ on:
         type: string
       mvn_credentials:
         description: >-
-          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
-          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+          Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
         required: false
         default: ''
         type: string
@@ -81,17 +75,11 @@ on:
       GPG_PRIVATE_KEY:
         required: true
         description: 'GPG key used to sign release artifacts'
-      CI_RELEASE_USERNAME:
-        required: true
-        description: 'Username used for deployment'
-      CI_RELEASE_PASSWORD:
-        required: true
-        description: 'Password used for deployment'
       MAVEN_SECRETS:
         required: false
         description: >-
-          JSON object with additional secrets referenced by mvn_credentials, i.e.
-          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
+          JSON object with secrets referenced by mvn_credentials (secret name to value), built by the caller
+          with toJSON for each value. Write it as a single line.
 
 jobs:
   release:
@@ -102,15 +90,12 @@ jobs:
     secrets:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
-      CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
-      server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
       additional_profiles: ${{ inputs.additional_profiles }}
       mvn_credentials: ${{ inputs.mvn_credentials }}
@@ -127,15 +112,12 @@ jobs:
     secrets:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
-      CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
-      server_id: ${{ inputs.server_id }}
       java_version: 11
       additional_profiles: ${{ inputs.additional_profiles }}
       mvn_credentials: ${{ inputs.mvn_credentials }}
@@ -151,15 +133,12 @@ jobs:
     secrets:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
-      CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
-      server_id: ${{ inputs.server_id }}
       java_version: 17
       additional_profiles: ${{ inputs.additional_profiles }}
       mvn_credentials: ${{ inputs.mvn_credentials }}
@@ -175,15 +154,12 @@ jobs:
     secrets:
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      CI_RELEASE_USERNAME: ${{ secrets.CI_RELEASE_USERNAME }}
-      CI_RELEASE_PASSWORD: ${{ secrets.CI_RELEASE_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       release_version: ${{ inputs.release_version }}
       development_version: ${{ inputs.development_version }}
       perform_version: ${{ inputs.perform_version }}
       dry_run: ${{ inputs.dry_run == true || inputs.dry_run == 'true' }}
-      server_id: ${{ inputs.server_id }}
       java_version: 21
       additional_profiles: ${{ inputs.additional_profiles }}
       mvn_credentials: ${{ inputs.mvn_credentials }}

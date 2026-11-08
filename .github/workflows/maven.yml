@@ -13,11 +13,6 @@ on:
         required: false
         default: 'master'
         type: string
-      server_id:
-        description: 'Server id used in case if results are deployed'
-        required: false
-        default: 'sonatype-nexus'
-        type: string
       java_version:
         description: 'Java version used for build, used only when openhab input is not true'
         required: false
@@ -43,8 +38,7 @@ on:
         type: boolean
       mvn_credentials:
         description: >-
-          Additional Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
-          Acts as whitelist - listed secrets are taken from declared secrets or MAVEN_SECRETS JSON.
+          Maven servers, one per line: server-id:USERNAME_SECRET:PASSWORD_SECRET.
         required: false
         default: ''
         type: string
@@ -66,17 +60,11 @@ on:
         default: ''
         type: string
     secrets:
-      CI_DEPLOY_USERNAME:
-        required: true
-        description: 'Username used for deployment'
-      CI_DEPLOY_PASSWORD:
-        required: true
-        description: 'Password used for deployment'
       MAVEN_SECRETS:
         required: false
         description: >-
-          JSON object with additional secrets referenced by mvn_credentials, i.e.
-          { "CI_DOCKER_USERNAME": toJSON(secrets.CI_DOCKER_USERNAME) } wrapped in expression syntax
+          JSON object with secrets referenced by mvn_credentials (secret name to value), built by the caller
+          with toJSON for each value. Write it as a single line.
 
 jobs:
   build:
@@ -91,13 +79,10 @@ jobs:
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
     secrets:
-      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
-      server_id: ${{ inputs.server_id }}
       java_version: ${{ inputs.java_version }}
       additional_profiles: ${{ inputs.additional_profiles }}
       additional_options: ${{ inputs.additional_options }}
@@ -127,13 +112,10 @@ jobs:
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
     secrets:
-      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
-      server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
       additional_options: ${{ inputs.additional_options }}
@@ -161,13 +143,10 @@ jobs:
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
     secrets:
-      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
-      server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
       additional_options: ${{ inputs.additional_options }}
@@ -195,13 +174,10 @@ jobs:
       fail-fast: false
     uses: 'connectorio/gh-actions-shared/.github/workflows/maven-build.yml@master'
     secrets:
-      CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-      CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
       MAVEN_SECRETS: ${{ secrets.MAVEN_SECRETS }}
     with:
       matrix_os: ${{ matrix.os }}
       openhab: ${{ inputs.openhab }}
-      server_id: ${{ inputs.server_id }}
       java_version: ${{ matrix.java }}
       additional_profiles: ${{ inputs.additional_profiles }}
       additional_options: ${{ inputs.additional_options }}
